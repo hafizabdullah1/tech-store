@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://tech-store-709v.onrender.com/api/:path*"
+    }
+  ]
+}
+
