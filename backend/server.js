@@ -10,6 +10,7 @@ import orderRoutes from "./Routes/orderRoutes.js";
 import path from "path";
 import uploadRoutes from "./Routes/uploadRoutes.js";
 import morgan from "morgan";
+import cors from "cors";
 
 
 dotenv.config();
@@ -19,6 +20,7 @@ if(process.env.NODE_ENV === 'DEVELOPMENT') {
   app.use(morgan('dev'));
 }
 
+app.use(cors());
 app.use(express.json());
 const PORT = process.env.PORT;
 
