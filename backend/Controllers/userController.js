@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import User from '../Models/userModel.js';
-import generateToken from "../utils/genarateToken.js";
+import generateToken from "../Utils/genarateToken.js";
 import bcrypt from "bcryptjs/dist/bcrypt.js";
 
 
