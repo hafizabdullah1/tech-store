@@ -42,7 +42,7 @@ function OrderScreen() {
 
   useEffect(() => {
     dispatch(getOrderDetails(orderId));
-  }, [orderId])
+  }, [dispatch, orderId])
 
   const successPaymentHandler = (paymentResult) => {
     console.log(paymentResult, "paymentResult");

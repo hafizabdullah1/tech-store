@@ -20,7 +20,7 @@ const ProductCarousel = () => {
         <Loader />
     ) : error ? (
         <Message variant='danger'>{error}</Message>
-    ) : (
+    ) : products && products.length > 0 ? (
         <Carousel pause='hover' className='bg-dark mb-4'>
             {products.map((product) => (
                 <Carousel.Item key={product._id}>
@@ -35,7 +35,7 @@ const ProductCarousel = () => {
                 </Carousel.Item>
             ))}
         </Carousel>
-    )
+    ) : null
 }
 
 export default ProductCarousel
