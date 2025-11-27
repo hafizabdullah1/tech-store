@@ -23,14 +23,14 @@ function OrderScreen() {
   const orderPay = useSelector((state) => state.orderPay);
   const { loading: loadingPay, success: successPay } = orderPay;
 
-  const orderDeliver = useSelector((state) => state.orderDeliver)
-  const { loading: loadingDeliver, success: successDeliver } = orderDeliver
+  const orderDeliver = useSelector((state) => state.orderDeliver);
+  const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
 
-  const userLogin = useSelector((state) => state.userLogin)
-  const { userInfo } = userLogin
+  const userLogin = useSelector((state) => state.userLogin);
+  const { userInfo } = userLogin;
 
 
-  if (!loading) {
+  if (!loading && order) {
     // Calculate prices
     const addDecimals = (num) => {
       return (Math.round(num * 100) / 100).toFixed(2);
@@ -38,15 +38,11 @@ function OrderScreen() {
     order.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0)
     );
-  };
-
-  useEffect(() => {
-    dispatch(getOrderDetails(orderId));
-  }, [dispatch, orderId])
+  }
 
   const successPaymentHandler = (paymentResult) => {
     console.log(paymentResult, "paymentResult");
-    dispatch(payOrder(orderId, paymentResult))
+    dispatch(payOrder(orderId, paymentResult));
   };
 
   useEffect(() => {
@@ -60,20 +56,35 @@ function OrderScreen() {
     };
 
     if (!userInfo) {
-      navigate('/login')
+      navigate("/login");
+      return;
     }
 
-    if (!order || successPay || successDeliver) {
+    if (!order || order._id !== orderId || successPay || successDeliver) {
       dispatch({ type: ORDER_PAY_RESET });
       dispatch({ type: ORDER_DELIVER_RESET });
-    } else {
+      dispatch(getOrderDetails(orderId));
+    } else if (!order.isPaid && !paypalClientId) {
       fetchPayPalClientId();
     }
-  }, [dispatch, orderId, successPay, order, successDeliver, userInfo, navigate]);
+  }, [
+    dispatch,
+    orderId,
+    successPay,
+    order,
+    successDeliver,
+    userInfo,
+    navigate,
+    paypalClientId,
+  ]);
 
 
   const deliverHandler = () => {
     dispatch(deliverOrder(order));
+  }
+
+  if (!loading && !order && !error) {
+    return <Message variant="danger">Unable to load order details.</Message>;
   }
 
   return loading ? (
@@ -90,21 +101,21 @@ function OrderScreen() {
               <h2>Shipping</h2>
               <p>
                 <strong>Name :</strong>
-                {order.user.name}
+                {order?.user?.name}
               </p>
               <p>
                 <strong>Email :</strong>
-                <a href={`mailto:${order.user.email}`}>{order.user.email}</a>
+                <a href={`mailto:${order?.user?.email}`}>{order?.user?.email}</a>
               </p>
               <p>
                 <strong>Address:</strong>
-                {order.shippingAddress.address}, {order.shippingAddress.city}
-                {order.shippingAddress.postalCode},
-                {order.shippingAddress.country}
+                {order?.shippingAddress.address}, {order?.shippingAddress.city}
+                {order?.shippingAddress.postalCode},
+                {order?.shippingAddress.country}
               </p>
-              {order.isDelivered ? (
+              {order?.isDelivered ? (
                 <Message variant="success">
-                  Delivered On{order.deliveredAt}
+                  Delivered On{order?.deliveredAt}
                 </Message>
               ) : (
                 <Message variant="danger">Not isDelivered</Message>
@@ -114,21 +125,21 @@ function OrderScreen() {
               <h2>Payment Method</h2>
               <p>
                 <strong>Method: </strong>
-                {order.paymentMethod}
+                {order?.paymentMethod}
               </p>
-              {order.isPaid ? (
-                <Message variant="success">Paid On{order.paidAt}</Message>
+              {order?.isPaid ? (
+                <Message variant="success">Paid On{order?.paidAt}</Message>
               ) : (
                 <Message variant="danger">Not Paid</Message>
               )}
             </ListGroup.Item>
             <ListGroup.Item>
               <h2>Order Items</h2>
-              {order.orderItems.length === 0 ? (
+              {order?.orderItems.length === 0 ? (
                 <Message>Order is empty</Message>
               ) : (
                 <ListGroup variant="flush">
-                  {order.orderItems.map((item, index) => (
+                  {order?.orderItems.map((item, index) => (
                     <ListGroup.Item key={index}>
                       <Row>
                         <Col md={1}>
@@ -164,28 +175,28 @@ function OrderScreen() {
               <ListGroup.Item>
                 <Row>
                   <Col>Items</Col>
-                  <Col>${order.itemsPrice}</Col>
+                  <Col>${order?.itemsPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Shipping</Col>
-                  <Col>${order.shippingPrice}</Col>
+                  <Col>${order?.shippingPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Tax</Col>
-                  <Col>${order.taxPrice}</Col>
+                  <Col>${order?.taxPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Total</Col>
-                  <Col>${order.totalPrice}</Col>
+                  <Col>${order?.totalPrice}</Col>
                 </Row>
               </ListGroup.Item>
-              {!order.isPaid && (
+              {!order?.isPaid && (
                 <ListGroup.Item>
                   {loadingPay && <Loader />}
                   {!paypalClientId ? (
@@ -194,18 +205,18 @@ function OrderScreen() {
                     <PayPalScriptProvider options={{ "client-id": paypalClientId, currency: "USD" }}>
                       <PayPalButtons
                         createOrder={(data, actions) => {
-                          return actions.order.create({
+                          return actions.order?.create({
                             purchase_units: [
                               {
                                 amount: {
-                                  value: order.totalPrice,
+                                  value: order?.totalPrice,
                                 },
                               },
                             ],
                           });
                         }}
                         onApprove={(data, actions) => {
-                          return actions.order.capture().then((details) => {
+                          return actions.order?.capture().then((details) => {
                             successPaymentHandler(details);
                           });
                         }}
@@ -217,8 +228,8 @@ function OrderScreen() {
               {loadingDeliver && <Loader />}
               {userInfo &&
                 userInfo.isAdmin &&
-                order.isPaid &&
-                !order.isDelivered && (
+                order?.isPaid &&
+                !order?.isDelivered && (
                   <ListGroup.Item>
                     <Button
                       type='button'
